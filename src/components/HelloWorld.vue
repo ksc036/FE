@@ -15,28 +15,31 @@
 
   <div id="room" v-if="roomHidden">
     <h3>Room {{ roomName }}</h3>
-    <form v-on:submit="onSendMsg">
+    <form v-on:submit="sendToServer">
       <input type="text" placeholder="message" v-model="message">
       <button> Send </button>
     </form>
   </div>
-
+  
+  <button @click="test">버튼</button>
 </template>
 
 <script>
-import io from 'socket.io-client';
+// import io from 'socket.io-client';
 // this.socket.on("welcome0", ()=>{
 //   console.log("welcome");
 // })
 export default {
   name: 'HelloWorld',
   created(){
-    if(this.socket === undefined){
-        this.socket = io('http://localhost:9000');
-      } 
-    this.socket.on("welcome", ()=>{
-      console.log("welcomne");
+    console.log("created");
+    this.$socket.on('welcome', (data)=> {
+      this.num = this.num + 1;
+      console.log("welcome");
+      console.log(data);
     })
+
+
   },
   data : () => {
     return {
@@ -46,6 +49,7 @@ export default {
       inputRoomName : "",
       message : "",
       roomHidden : false,
+      num : 0,
     }
   },
   props: {
@@ -53,17 +57,17 @@ export default {
   },
   methods : {
     connect () {
-      if(this.socket === undefined){
-        this.socket = io('http://localhost:9000');
-      } 
-      console.log(this.socket);
+      console.log(this.$socket);
+      console.log(this.num);
     },
-    sendToServer(){
-      this.socket.emit("chat","geasd");
+    sendToServer(e){
+      e.preventDefault();
+      this.$socket.emit("msg",this.roomName,this.message);
+      this.message = "";
     },
     onSubmitForm(e){
       e.preventDefault();
-      this.socket.emit("enter_room",this.inputRoomName,this.alterRoom);
+      this.$socket.emit("enter_room",this.inputRoomName,this.alterRoom);
       this.roomName = this.inputRoomName; 
       this.inputRoomName = "";
     },
