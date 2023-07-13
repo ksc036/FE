@@ -11,6 +11,6 @@ app.config.globalProperties.$socket = socket;
 
 
 app.mount('#app')
-console.log(app.config.globalProperties.$socket);
+// console.log(app.config.globalProperties.$socket);
 // console.log(App);
 // createApp(App).mount('#app')

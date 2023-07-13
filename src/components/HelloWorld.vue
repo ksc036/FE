@@ -1,96 +1,142 @@
 <template>
 
-  <div id="welcome" v-if="!roomHidden">
-    <h1>room</h1>
-    <form v-on:submit="joinRoom">
-      <input type="text" placeholder="room name" v-model="inputRoomName">
-      <input type="text" placeholder="nickname" v-model="nickname">
-      <button> join / Create Room</button>
-    </form>
+  <h1>Room</h1>
+  <div id="welcome" v-if="!chat">
+    <input type="text" placeholder="room name" required v-model="roomName">
+    <button @click="enter_room">Enter Room</button>
   </div>
 
-  <div id="room" v-if="roomHidden">
-    <h3>Room {{ roomName }} // 내 닉네임 :{{ nickname }}</h3>
-    <ul id="ul">
-    <li v-for="item in messageList" :key={item}>
-      <MsgLine :obj=item></MsgLine>
-    </li>
-  </ul>
-    <form v-on:submit="sendToServer">
-      <input type="text" placeholder="message" v-model="message">
-      <button> Send </button>
-    </form>
+  <div v-if="chat">
+    <h1>{{roomName}}</h1>
+    <div>
+      <video ref="video" autoplay width="400" height="400"></video>
+      <button id="mic" @click="cameraClick">{{ camera? "카메라 끄기" : "카메라 켜기"}}</button>
+      <button id="mute" @click="muteClick">{{ mic ? "마이크 끄기" : "마이크 켜기"}}</button>
+
+      <div class="peerStream">
+      <video ref="peer" autoplay width="400" height="400"></video>
+    </div>
+    </div>
+
+
   </div>
-  
-  <!-- <button @click="test">버튼</button> -->
 
 </template>
 
 <script>
-import MsgLine from './MsgLine.vue'
 
 export default {
-  components: {
-    MsgLine
-  },
-
   name: 'HelloWorld',
 
   created(){
-    // console.log("created");
-    this.$socket.on('welcome', ()=> {
-      this.addMessage("공지","누군가 접속했습니다.");
+    // this.getMedia();
+    this.$socket.on("welcome", async () =>{
+      const offer = await this.myPeerConnection.createOffer();
+      this.myPeerConnection.setLocalDescription(offer);
+      console.log("sent offer");
+
+      this.$socket.emit("offer", offer, this.roomName);
+      // console.log(offer);
     })
 
-    this.$socket.on('bye', ()=> {
-      this.addMessage("공지","누군가 떠났습니다.");
-    })
-    
-    this.$socket.on('new_message', (nickname,message)=> {
-      this.addMessage(nickname,message);
+    this.$socket.on("offer", async (offer) =>{
+      console.log("receive offer");
+      this.myPeerConnection.setRemoteDescription(offer);
+      const answer = await this.myPeerConnection.createAnswer();
+      // console.log(answer);
+
+      this.myPeerConnection.setLocalDescription(answer);
+      this.$socket.emit("answer",answer,this.roomName);
+      console.log("sent answer");
     })
 
+    this.$socket.on("answer",(answer) =>{
+      console.log("receive the answer");
+      this.myPeerConnection.setRemoteDescription(answer);
+    })
+
+    this.$socket.on("ice",(ice) =>{
+      console.log("recive candidate");
+      this.myPeerConnection.addIceCandidate(ice);
+    })
   },
   data : () => {
     return {
-      str : "init",
-      // address: 'http://localhost:9000',
+      myStream : {},
+      mic : true,
+      camera : true,
+      chat : false,
       roomName : "",
-      inputRoomName : "",
-      message : "",
-      roomHidden : false,
-      messageList : [],
-      nickname : "",
     }
   },
   props: {
     msg: String,
   },
   methods : {
-    sendToServer(e){
-      e.preventDefault();
-      this.$socket.emit("new_message",this.roomName,this.nickname,this.message,(message)=>{
-        // console.log(message);
-        this.addMessage(`you(${this.nickname})`, message);
-      });
-      this.message = "";
-    },
-    joinRoom(e){
-      e.preventDefault();
-      if(this.nickname == "공지"){
-        alert("공지 이름은 사용할 수 없습니다.");
-        this.nickname = "";
-        return;
+    async getMedia(){
+      try{
+        this.myStream = await navigator.mediaDevices.getUserMedia({
+          audio : true,
+          video :true
+        })
+        // console.log(this.myStream);
+        this.$refs.video.srcObject = this.myStream;
+        // await this.getCamera();
+        // this.$refs.video.play();
+        // console.log(this.$refs.video)
+
+      }catch(e){
+        console.log(e);
       }
-      this.$socket.emit("enter_room",this.inputRoomName,this.alterRoom);
-      this.roomName = this.inputRoomName; 
-      this.inputRoomName = "";
     },
-    addMessage(user,content){
-      this.messageList.push({user,content});
+    cameraClick(){
+      this.myStream.getVideoTracks().forEach((track) => (track.enabled = ! track.enabled));
+      // console.log(this.myStream.getVideoTracks());
+      this.camera = !this.camera;
     },
-    alterRoom(){
-      this.roomHidden = !this.roomHidden;
+    muteClick(){
+      this.myStream.getAudioTracks().forEach((track) => (track.enabled = ! track.enabled));
+      // console.log(this.myStream.getAudioTracks());
+      this.mic = !this.mic;
+    },
+    // async getCamera(){
+    //   try{
+    //     const devices = await navigator.mediaDevices.enumerateDevices();
+    //     const cameras = devices.filter(device => device.kind === "videoinput");
+    //     console.log(cameras);
+    //     // console.log(devices);
+    //   }catch(e){
+    //     console.log(e);
+    //   }
+    // },
+    async enter_room(){
+      await this.initCall();
+      this.$socket.emit("join_room",this.roomName);
+    },
+    async initCall(){
+      this.chat = !this.chat;
+      await this.getMedia();
+      this.makeConnection(); //RTC객체를 생성하고 컴포넌트 전역에 선언함.
+    },
+    makeConnection(){
+      const peerConnection = new RTCPeerConnection();
+      this.myPeerConnection = peerConnection;
+      this.myPeerConnection.addEventListener("icecandidate", this.handleIce);
+      this.myPeerConnection.addEventListener("addstream", this.handleAddStream)
+      // console.log(peerConnection);
+      this.myStream.getTracks().forEach(track =>{
+        this.myPeerConnection.addTrack(track,this.myStream);
+      });
+    },
+    handleIce(data){
+      console.log("send candidate");
+      this.$socket.emit("ice", data.candidate, this.roomName);
+      // console.log(data);
+    },
+    handleAddStream(data){
+      console.log("got my peer");
+      // console.log(data); //data.stream 이 동료영상
+      this.$refs.peer.srcObject = data.stream;
     }
 },
 }
