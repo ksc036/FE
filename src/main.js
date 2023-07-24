@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import io from 'socket.io-client'
 
-const socket = io("http://localhost:9000", { transports: ['websocket']});
+const socket = io("https://localhost:9000", { transports: ['websocket']});
 
 
 // App.config.globalProperties.$socket = socket;
