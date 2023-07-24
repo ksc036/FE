@@ -137,6 +137,7 @@ export default {
       console.log("got my peer");
       // console.log(data); //data.stream 이 동료영상
       this.$refs.peer.srcObject = data.stream;
+      console.log(data.stream);
     }
 },
 }
