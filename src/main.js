@@ -2,7 +2,9 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import io from 'socket.io-client'
 
-const socket = io("wss://i9a701.p.ssafy.io/api", { transports: ['websocket']});
+// const socket = io("wss://i9a701.p.ssafy.io/api", { transports: ['websocket']});
+const socket = io("wss://i9a701.p.ssafy.io/api");
+
 
 
 // App.config.globalProperties.$socket = socket;
