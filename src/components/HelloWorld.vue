@@ -29,30 +29,35 @@ export default {
 
   created() {
     // this.getMedia();
-    // this.$socket.on("welcome", async () =>{
-    //   const offer = await this.myPeerConnection.createOffer();
-    //   this.myPeerConnection.setLocalDescription(offer);
-    //   console.log("sent offer");
-    //   this.$socket.emit("offer", offer, this.roomName);
-    //   // console.log(offer);
-    // })
-    // this.$socket.on("offer", async (offer) =>{
-    //   console.log("receive offer");
-    //   this.myPeerConnection.setRemoteDescription(offer);
-    //   const answer = await this.myPeerConnection.createAnswer();
-    //   // console.log(answer);
-    //   this.myPeerConnection.setLocalDescription(answer);
-    //   this.$socket.emit("answer",answer,this.roomName);
-    //   console.log("sent answer");
-    // })
-    // this.$socket.on("answer",(answer) =>{
-    //   console.log("receive the answer");
-    //   this.myPeerConnection.setRemoteDescription(answer);
-    // })
-    // this.$socket.on("ice",(ice) =>{
-    //   console.log("recive candidate");
-    //   this.myPeerConnection.addIceCandidate(ice);
-    // })
+    this.$socket.on("welcome", async () => {
+      const offer = await this.myPeerConnection.createOffer();
+      this.myPeerConnection.setLocalDescription(offer);
+      console.log("sent offer");
+
+      this.$socket.emit("offer", offer, this.roomName);
+      // console.log(offer);
+    });
+
+    this.$socket.on("offer", async (offer) => {
+      console.log("receive offer");
+      this.myPeerConnection.setRemoteDescription(offer);
+      const answer = await this.myPeerConnection.createAnswer();
+      // console.log(answer);
+
+      this.myPeerConnection.setLocalDescription(answer);
+      this.$socket.emit("answer", answer, this.roomName);
+      console.log("sent answer");
+    });
+
+    this.$socket.on("answer", (answer) => {
+      console.log("receive the answer");
+      this.myPeerConnection.setRemoteDescription(answer);
+    });
+
+    this.$socket.on("ice", (ice) => {
+      console.log("recive candidate");
+      this.myPeerConnection.addIceCandidate(ice);
+    });
   },
   data: () => {
     return {
