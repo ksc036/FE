@@ -1,4 +1,5 @@
 <template>
+  <h1>#1</h1>
   <h1>Room</h1>
   <div id="welcome" v-if="!chat">
     <input type="text" placeholder="room name" required v-model="roomName" />
