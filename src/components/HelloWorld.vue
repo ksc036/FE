@@ -2,7 +2,7 @@
   <div>
     <h1>Room</h1>
     <div id="welcome" v-if="!chat">
-      <input type="text" placeholder="Nick name" required v-model="nickName" />
+      <input type="text" placeholder="Nick name" required v-model="nickname" />
       <input type="text" placeholder="room name" required v-model="roomName" />
       <button @click="enter_room">Enter Room</button>
     </div>
@@ -65,11 +65,12 @@ export default {
   data: () => {
     return {
       myStream: {},
-      nickName: "",
+      nickname: "",
       mic: true,
       camera: true,
       chat: false,
       roomName: "",
+      users: [],
     };
   },
   props: {
@@ -108,11 +109,13 @@ export default {
           audio: true,
           video: true,
         });
-        // console.log(this.myStream);
+
         this.$refs.video.srcObject = this.myStream;
-        // await this.getCamera();
-        // this.$refs.video.play();
-        // console.log(this.$refs.video)
+
+        this.$socket.emit("join_room", {
+          nickname: this.nickname,
+          roomName: this.roomName,
+        });
       } catch (e) {
         console.log(e);
       }
