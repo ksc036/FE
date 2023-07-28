@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1>Room</h1>
+    <h1 v-if="!chat">Room</h1>
     <div id="welcome" v-if="!chat">
       <input type="text" placeholder="Nick name" required v-model="nickname" />
       <input type="text" placeholder="room name" required v-model="roomName" />
@@ -8,61 +8,68 @@
     </div>
 
     <div v-if="chat">
-      <h1>{{ roomName }}</h1>
+      <h1>방이름 : {{ roomName }}</h1>
       <div>
+        <p> your nickname : {{ nickname }}</p>
         <video ref="video" autoplay width="400" height="400"></video>
+        
         <button id="mic" @click="cameraClick">
           {{ camera ? "카메라 끄기" : "카메라 켜기" }}
         </button>
         <button id="mute" @click="muteClick">
           {{ mic ? "마이크 끄기" : "마이크 켜기" }}
         </button>
-
-        <div class="peerStream">
-          <video ref="peer" autoplay width="400" height="400"></video>
-        </div>
+        <h1>현재 참가자들</h1>
+          <UserVideo v-for="user in users" :key="user.id" :info="user"></UserVideo>
+          <!-- <video ref="peer" autoplay width="400" height="400"></video> -->
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import UserVideo from "./UserVideo.vue";
 export default {
   name: "HelloWorld",
-
+  components: {
+    UserVideo,
+  },
+  // mounted(){
+  //   console.log(this.$refs);
+  // },
   created() {
     this.$socket.on("all_users", async (allUsers) => {
-      console.log(allUsers);
+      // console.log(allUsers);
       for(let i =0; i<allUsers.length;i++){
         //소켓id , nickname
         let pc  = this.createPeerConnection(allUsers[i].id,allUsers[i].nickname); //RTC객체 생성하고 배열에 담고 이벤트등록 및 트랙등록해서 리턴
         const offer = await pc.createOffer();
         pc.setLocalDescription(offer);
-        console.log("sendOffer 보내는 곳");
-        console.log(allUsers[i].id);
+        // console.log("sendOffer 보내는 곳");
+        // console.log(allUsers[i].id);
         this.$socket.emit("offer", {offer,offerSendID : this.$socket.id, offerReceiveID : allUsers[i].id, offerSendNickname : allUsers[i].nickname});
       }
     });
 
     this.$socket.on("getOffer", async (data) => {
-      console.log("receive offer");
+      // console.log("receive offer");
       let pc = this.createPeerConnection(data.offerSendID,data.offerSendNickname);
       pc.setRemoteDescription(data.offer);
       const answer = await pc.createAnswer();
       // console.log(answer);
       pc.setLocalDescription(answer);
       this.$socket.emit("answer", {answer, answerSendID:this.$socket.id, answerReceiveID:data.offerSendID});
-      console.log("sent answer");
+      // console.log("sent answer");
     });
 
     this.$socket.on("getAnswer", (data) => {
-      console.log("receive the answer");
+      // console.log("receive the answer");
       let pc = this.pcs[data.answerSendID];
       pc.setRemoteDescription(data.answer);
     });
 
     this.$socket.on("getCandidate", (data) => {
-      console.log("recive candidate");
+      // console.log("recive candidate");
       let pc = this.pcs[data.candidateSendID];
       pc.addIceCandidate(data.candidate);
     });
@@ -70,7 +77,8 @@ export default {
     this.$socket.on("user_exit", (data) => {
       this.pcs[data.id].close();
       delete this.pcs[data.id];
-      this.users.filter(user =>  user.id !== data.id)
+      this.users.filter(user =>  user.id !== data.id);
+      // console.log(this.users);
     });
   },
   data: () => {
@@ -103,11 +111,11 @@ export default {
       return pc;
     },
     handleAddStream(data,socketID,nickname){
-      console.log("got my peer");
+      // console.log("got my peer");
       this.users.push({id: socketID, nickname, stream : data.stream});
     },
     handleIceCandidate(data,socketID){
-      console.log("send candidate");
+      // console.log("send candidate");
         this.$socket.emit("candidate",{
         candidate: data.candidate,
         candidateSendID: this.$socket.id,
@@ -122,7 +130,7 @@ export default {
       this.camera = !this.camera;
     },
     muteClick() {
-      console.log(this.myStream.getAudioTracks());
+      // console.log(this.myStream.getAudioTracks());
       this.myStream
         .getAudioTracks()
         .forEach((track) => (track.enabled = !track.enabled));
@@ -149,6 +157,7 @@ export default {
           audio: true,
           video: true,
         });
+        // console.log(this.$refs.video);
         this.$refs.video.srcObject = this.myStream;
       } catch (e) {
         console.log(e);
