@@ -31,35 +31,46 @@ export default {
   name: "HelloWorld",
 
   created() {
-    // this.getMedia();
-    this.$socket.on("welcome", async () => {
-      const offer = await this.myPeerConnection.createOffer();
-      this.myPeerConnection.setLocalDescription(offer);
-      console.log("sent offer");
-
-      this.$socket.emit("offer", offer, this.roomName);
-      // console.log(offer);
+    this.$socket.on("all_users", async (allUsers) => {
+      console.log(allUsers);
+      for(let i =0; i<allUsers.length;i++){
+        //소켓id , nickname
+        let pc  = this.createPeerConnection(allUsers[i].id,allUsers[i].nickname); //RTC객체 생성하고 배열에 담고 이벤트등록 및 트랙등록해서 리턴
+        const offer = await pc.createOffer();
+        pc.setLocalDescription(offer);
+        console.log("sendOffer 보내는 곳");
+        console.log(allUsers[i].id);
+        this.$socket.emit("offer", {offer,offerSendID : this.$socket.id, offerReceiveID : allUsers[i].id, offerSendNickname : allUsers[i].nickname});
+      }
     });
 
-    this.$socket.on("offer", async (offer) => {
+    this.$socket.on("getOffer", async (data) => {
       console.log("receive offer");
-      this.myPeerConnection.setRemoteDescription(offer);
-      const answer = await this.myPeerConnection.createAnswer();
+      let pc = this.createPeerConnection(data.offerSendID,data.offerSendNickname);
+      pc.setRemoteDescription(data.offer);
+      const answer = await pc.createAnswer();
       // console.log(answer);
-
-      this.myPeerConnection.setLocalDescription(answer);
-      this.$socket.emit("answer", answer, this.roomName);
+      pc.setLocalDescription(answer);
+      this.$socket.emit("answer", {answer, answerSendID:this.$socket.id, answerReceiveID:data.offerSendID});
       console.log("sent answer");
     });
 
-    this.$socket.on("answer", (answer) => {
+    this.$socket.on("getAnswer", (data) => {
       console.log("receive the answer");
-      this.myPeerConnection.setRemoteDescription(answer);
+      let pc = this.pcs[data.answerSendID];
+      pc.setRemoteDescription(data.answer);
     });
 
-    this.$socket.on("ice", (ice) => {
+    this.$socket.on("getCandidate", (data) => {
       console.log("recive candidate");
-      this.myPeerConnection.addIceCandidate(ice);
+      let pc = this.pcs[data.candidateSendID];
+      pc.addIceCandidate(data.candidate);
+    });
+    
+    this.$socket.on("user_exit", (data) => {
+      this.pcs[data.id].close();
+      delete this.pcs[data.id];
+      this.users.filter(user =>  user.id !== data.id)
     });
   },
   data: () => {
@@ -71,12 +82,38 @@ export default {
       chat: false,
       roomName: "",
       users: [],
+      pcs : {},
     };
   },
   props: {
     msg: String,
   },
   methods: {
+    // this.createPeerConnection(allUsers[i].id,allUsers[i].nickname);
+    createPeerConnection(socketID,nickname){
+      let pc = new RTCPeerConnection();
+      this.pcs = {...this.pcs, [socketID]: pc};
+
+      pc.addEventListener("icecandidate", (data)=>this.handleIceCandidate(data,socketID));
+      pc.addEventListener("addstream", (data)=>this.handleAddStream(data,socketID,nickname));
+      this.myStream.getTracks().forEach((track) => {
+        pc.addTrack(track, this.myStream);
+      });
+
+      return pc;
+    },
+    handleAddStream(data,socketID,nickname){
+      console.log("got my peer");
+      this.users.push({id: socketID, nickname, stream : data.stream});
+    },
+    handleIceCandidate(data,socketID){
+      console.log("send candidate");
+        this.$socket.emit("candidate",{
+        candidate: data.candidate,
+        candidateSendID: this.$socket.id,
+        candidateReceiveID: socketID
+      });
+    },
     cameraClick() {
       this.myStream
         .getVideoTracks()
@@ -96,12 +133,15 @@ export default {
     //클릭하면 enter_room 실행된다.
     async enter_room() {
       await this.initCall(); //자신의 track이랑 video audio를 등록해놓고 시그널링 서버에 접속
-      this.$socket.emit("join_room", this.roomName);
+      // this.$socket.emit("join_room", this.roomName);
     },
     async initCall() {
       this.chat = !this.chat;
       await this.getMedia();
-      this.makeConnection(); //RTC객체를 생성하고 컴포넌트 전역에 선언함.
+      this.$socket.emit("join_room", {//all user 시작하는거임 //offer도 저기서 완성시키고 보냄
+          nickname: this.nickname,
+          roomName: this.roomName,
+        });
     },
     async getMedia() {
       try {
@@ -109,40 +149,12 @@ export default {
           audio: true,
           video: true,
         });
-
         this.$refs.video.srcObject = this.myStream;
-
-        this.$socket.emit("join_room", {
-          nickname: this.nickname,
-          roomName: this.roomName,
-        });
       } catch (e) {
         console.log(e);
       }
     },
-    makeConnection() {
-      const peerConnection = new RTCPeerConnection();
-      this.myPeerConnection = peerConnection;
-      this.myPeerConnection.addEventListener("icecandidate", this.handleIce);
-      this.myPeerConnection.addEventListener("addstream", this.handleAddStream);
-      this.myStream.getTracks().forEach((track) => {
-        this.myPeerConnection.addTrack(track, this.myStream);
-      });
-    },
-    handleIce(data) {
-      console.log("send candidate");
-      this.$socket.emit("ice", data.candidate, this.roomName);
-      // console.log(data);
-    },
-    handleAddStream(data) {
-      console.log("got my peer");
-      // console.log(data); //data.stream 이 동료영상
-      console.log(data);
-      console.log("상대스트림얻음");
-      console.log(data.stream); //상대의 스트림
-      this.$refs.peer.srcObject = data.stream;
-      // console.log(data.stream);
-    },
+
   },
 };
 </script>
