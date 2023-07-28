@@ -101,6 +101,18 @@ export default {
   },
   data: () => {
     return {
+      pc_config: {
+        iceServers: [
+          // {
+          //   urls: 'stun:[STUN_IP]:[PORT]',
+          //   'credentials': '[YOR CREDENTIALS]',
+          //   'username': '[USERNAME]'
+          // },
+          {
+            urls: "stun:stun.l.google.com:19302",
+          },
+        ],
+      },
       myStream: {},
       nickname: "",
       mic: true,
@@ -117,7 +129,7 @@ export default {
   methods: {
     // this.createPeerConnection(allUsers[i].id,allUsers[i].nickname);
     createPeerConnection(socketID, nickname) {
-      let pc = new RTCPeerConnection();
+      let pc = new RTCPeerConnection(this.pc_config);
       this.pcs = { ...this.pcs, [socketID]: pc };
 
       pc.addEventListener("icecandidate", (data) =>
