@@ -102,15 +102,13 @@ export default {
   data: () => {
     return {
       pc_config: {
-        iceServers: {
-          iceServers: [
-            {
-              urls: "turn:i9a701.p.ssafy.io",
-              username: "ksc",
-              credential: "036",
-            },
-          ],
-        },
+        iceServers: [
+          {
+            urls: "turn:turn.i9a701.p.ssafy.io",
+            username: "ksc",
+            credential: "036",
+          },
+        ],
       },
       myStream: {},
       nickname: "",
