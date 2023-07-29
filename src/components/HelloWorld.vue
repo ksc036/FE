@@ -185,4 +185,5 @@ export default {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
+<!-- turn 서버 구축 -->
 <style scoped></style>
