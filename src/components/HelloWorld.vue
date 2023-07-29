@@ -99,7 +99,21 @@ export default {
   methods: {
     // this.createPeerConnection(allUsers[i].id,allUsers[i].nickname);
     createPeerConnection(socketID,nickname){
-      let pc = new RTCPeerConnection();
+      let pc = new RTCPeerConnection(
+        {
+          iceServers: [
+        {
+            urls : [
+              "stun:stun.l.google.com:19302",
+              "stun:stun1.l.google.com:19302",
+              "stun:stun2.l.google.com:19302",
+              "stun:stun3.l.google.com:19302",
+              "stun:stun4.l.google.com:19302",
+          ],
+        }
+    ]
+        }
+      );
       this.pcs = {...this.pcs, [socketID]: pc};
 
       pc.addEventListener("icecandidate", (data)=>this.handleIceCandidate(data,socketID));
