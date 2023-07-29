@@ -11,6 +11,7 @@
       <h1>방이름 : {{ roomName }}</h1>
       <div>
         <p> your nickname : {{ nickname }}</p>
+      <button @click="debug">디버그 버튼</button>
         <video ref="video" autoplay width="400" height="400"></video>
         
         <button id="mic" @click="cameraClick">
@@ -97,6 +98,11 @@ export default {
     msg: String,
   },
   methods: {
+    debug(){
+      for(let i in this.pcs){
+        console.log(this.pcs[i].getConfiguration());
+      }
+    },
     // this.createPeerConnection(allUsers[i].id,allUsers[i].nickname);
     createPeerConnection(socketID,nickname){
       let pc = new RTCPeerConnection(
@@ -104,6 +110,15 @@ export default {
           iceServers: [
         {
             urls : [
+              "stun:stun.ekiga.net",
+              "stun:ideasip.com",
+              "stun:stun.rixtelecom.se",
+              "stun:stun.schlund.de",
+"stun:stun.stunprotocol.org:3478",
+"stun:stun.voiparound.com",
+"stun:stun.voipbuster.com",
+"stun:stun.voipstunt.com",
+"stun:stun.voxgratia.org",
               "stun:stun.l.google.com:19302",
               "stun:stun1.l.google.com:19302",
               "stun:stun2.l.google.com:19302",
