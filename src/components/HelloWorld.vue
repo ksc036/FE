@@ -8,7 +8,7 @@
     </div>
 
     <div v-if="chat">
-      <h1>방이름 : {{ roomName }}</h1>
+      <h1>방이름#1 : {{ roomName }}</h1>
       <div>
         <p> your nickname : {{ nickname }}</p>
       <button @click="debug">디버그 버튼</button>
@@ -78,7 +78,7 @@ export default {
     this.$socket.on("user_exit", (data) => {
       this.pcs[data.id].close();
       delete this.pcs[data.id];
-      this.users.filter(user =>  user.id !== data.id);
+      this.users = this.users.filter(user =>  user.id !== data.id);
       // console.log(this.users);
     });
   },
@@ -124,7 +124,13 @@ export default {
               "stun:stun2.l.google.com:19302",
               "stun:stun3.l.google.com:19302",
               "stun:stun4.l.google.com:19302",
+              "iphone-stun.strato-iphone.de:3478"
           ],
+        },
+        {
+            urls: 'turn:i9a701.p.ssafy.io:3478',
+            username: 'ksc',
+            credential: '036'
         }
     ]
         }
