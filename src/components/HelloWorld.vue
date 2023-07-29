@@ -109,10 +109,6 @@ export default {
         {
           iceServers: [
         {
-            urls : [
-          ],
-        },
-        {
             urls: 'turn:i9a701.p.ssafy.io:3478',
             username: 'ksc',
             credential: '036'
