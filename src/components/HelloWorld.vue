@@ -119,6 +119,16 @@ export default {
     ]
         }
       );
+      const H264Codec = {
+  mimeType: 'video/H264',
+  clockRate: 90000,
+  payloadType: 101, // 사용 가능한 Payload Type 중에 선택 (충돌이 없도록 지정)
+};
+pc.addTransceiver('video', {
+  direction: 'sendrecv',
+  streams: [],
+  codecs: [H264Codec],
+});
       this.pcs = {...this.pcs, [socketID]: pc};
 
       pc.addEventListener("icecandidate", (data)=>this.handleIceCandidate(data,socketID));
