@@ -111,11 +111,11 @@ export default {
           {
             urls: 'stun:i9a701.p.ssafy.io:3478',
           },
-        {
-            urls: 'turn:i9a701.p.ssafy.io:3478',
-            username: 'ksc',
-            credential: '036'
-        }
+        // {
+        //     urls: 'turn:i9a701.p.ssafy.io:3478',
+        //     username: 'ksc',
+        //     credential: '036'
+        // }
     ]
         }
       );
