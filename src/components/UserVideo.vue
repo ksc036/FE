@@ -1,5 +1,5 @@
 <template>
-        <video ref="remote" autoplay width="400" height="400"></video>
+        <video ref="remote" autoplay playsinline width="400" height="400"></video>
         <span>{{ info.nickname }}</span>
   </template>
   <script>
